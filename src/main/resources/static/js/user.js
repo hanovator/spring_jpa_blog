@@ -27,8 +27,12 @@ let index = {
 				dataType: "json"
 			}).done(function(resp){
 				console.log('res -- ', resp)
-				alert("회원가입 완료");				
-				location.href="/";				
+				if(resp.status == 200){
+					alert("회원가입 완료");			
+					location.href="/";		
+				} else {
+					alert("회원가입 실패");			
+				}							
 			}).fail(function(e){		
 				alert("nono")
 				alert(JSON.stringify(e));

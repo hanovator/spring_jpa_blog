@@ -1,7 +1,5 @@
 package com.cos.blog.service;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,14 +7,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.cos.blog.model.Board;
+import com.cos.blog.model.Reply;
 import com.cos.blog.model.User;
 import com.cos.blog.repository.BoardRepository;
+import com.cos.blog.repository.ReplyRepository;
 
 @Service
 public class BoardService {
 	
 	@Autowired
 	private BoardRepository boardRepository;
+	
+	@Autowired
+	private ReplyRepository replyRepository;
 	
 	@Transactional
 	public void 글쓰기(Board board, User user) {
@@ -45,6 +48,11 @@ public class BoardService {
 	}
 	
 	@Transactional
+	public void 댓글삭제하기(int replyId){
+		replyRepository.deleteById(replyId);
+	}
+	
+	@Transactional
 	public void 글수정하기(int id, Board requestBoard){
 		Board board = boardRepository.findById(id)
 			.orElseThrow(()-> {
@@ -52,5 +60,15 @@ public class BoardService {
 			});
 		board.setTitle(requestBoard.getTitle());
 		board.setContent(requestBoard.getContent());
+	}
+	
+	@Transactional
+	public void 댓글쓰기(User user, int boardId, Reply requestReply) {
+		Board board = boardRepository.findById(boardId).orElseThrow(()->{
+			return new IllegalArgumentException("댓글쓰기 실패: 게시글 id를 찾을 수 없습니다.");
+		});
+		requestReply.setUser(user);
+		requestReply.setBoard(board);
+		replyRepository.save(requestReply);
 	}
 }

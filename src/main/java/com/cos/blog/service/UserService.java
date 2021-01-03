@@ -55,10 +55,15 @@ public class UserService {
 		User user  = userRepository.findById(requestUser.getId()).orElseThrow(()->{
 			return new IllegalArgumentException("회원찾기 실패");
 		});
-		String rawPass = requestUser.getPassword();
-		String encPass = encoder.encode(rawPass);
-		user.setPassword(encPass);
-		user.setEmail(requestUser.getEmail());
+		
+		// validation check for oauth login
+		if(user.getOauth() == null || user.getOauth().equals("")) {
+			String rawPass = requestUser.getPassword();
+			String encPass = encoder.encode(rawPass);
+			user.setPassword(encPass);
+			user.setEmail(requestUser.getEmail());
+		}
+		
 	}
 	
 	public String postRequest(String code, String KAKAO_API_KEY) {
