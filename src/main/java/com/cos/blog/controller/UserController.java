@@ -1,7 +1,30 @@
 package com.cos.blog.controller;
 
+import java.util.UUID;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.client.RestTemplate;
+
+import com.cos.blog.model.KakaoProfile;
+import com.cos.blog.model.OAuthToken;
+import com.cos.blog.model.User;
+import com.cos.blog.service.UserService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /*
  * 인증안된 사용자 허용범위
@@ -10,6 +33,17 @@ import org.springframework.web.bind.annotation.GetMapping;
  */
 @Controller
 public class UserController {
+	
+	private final String KAKAO_API_KEY = "0cae828dc6e3a4d55550fca2efc9e195";
+	
+	@Value("${cos.key}")
+	private String cosKey;
+	
+	@Autowired
+	private UserService userService;
+	
+	@Autowired
+	private AuthenticationManager authenticationManager;
 	
 	@GetMapping("/auth/joinForm")
 	public String joinForm() {
@@ -24,5 +58,32 @@ public class UserController {
 	@GetMapping("/user/updateForm")
 	public String updateForm() {
 		return "user/updateForm";
+	}
+	
+	@GetMapping("/auth/kakao/callback")
+	public String kakaoCallback(String code){
+		String oAuthToken = userService.postRequest(code, KAKAO_API_KEY);
+		KakaoProfile kakaoInfo = userService.postRequestKaKaoInfo(oAuthToken);
+		
+		String email = kakaoInfo.getKakao_account().getEmail();
+		String userName = email+"_"+kakaoInfo.getId();
+		
+		User kakaoUser = User.builder()
+				.username(userName)
+				.password(cosKey)
+				.email(email)
+				.oauth("kakao")
+				.build();
+		
+		User originUser = userService.회원찾기(kakaoUser.getUsername());
+		if(originUser.getUsername() == null) {
+			System.out.println("기존 회원이 아닙니다.");
+			userService.회원가입(kakaoUser);
+		} 
+		
+		Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(kakaoUser.getUsername(), cosKey));
+		SecurityContextHolder.getContext().setAuthentication(authentication);
+		
+		return "redirect:/";
 	}
 }

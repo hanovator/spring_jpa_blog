@@ -31,7 +31,7 @@ public class User {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private int id;
 	
-	@Column(nullable=false, length=30, unique = true)
+	@Column(nullable=false, length=100, unique = true)
 	private String username;
 	
 	@Column(nullable=false, length=100)
@@ -45,4 +45,7 @@ public class User {
 	
 	@CreationTimestamp
 	private Timestamp createDate;	
+	
+	@Column(nullable=true, length=30)
+	private String oauth;
 }
